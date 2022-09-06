@@ -1,0 +1,5 @@
+{
+  "password":"2357",
+  "user":"root",
+  "url":"jdbc:mysql://localhost:3306/cashdb"
+}

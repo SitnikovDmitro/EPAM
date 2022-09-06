@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Context>
+    <Resource name="jdbc/cp"
+              auth="Container"
+              type="javax.sql.DataSource"
+              username="root"
+              password="2357"
+              driverClassName="com.mysql.jdbc.Driver"
+              url="jdbc:mysql://localhost:3306/agency_database?autoReconnect=true"
+              validationQuery="SELECT 1"
+              maxActive="10"
+              maxIdle="4"/>
+</Context>
