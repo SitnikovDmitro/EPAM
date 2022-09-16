@@ -7,7 +7,14 @@ import entity.Cheque;
 import entity.ChequeLine;
 import entity.Product;
 import exceptions.DBException;
+import org.apache.poi.xwpf.usermodel.ParagraphAlignment;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.apache.poi.xwpf.usermodel.XWPFRun;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.sql.Date;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -79,6 +86,10 @@ public class ChequeService {
         if (pagesCount > 0 && p != pagesCount) pages.add(pagesCount);
     }
 
+    /**
+     * Creates cheque in database
+     * @param chequeLines list of cheque lines
+     */
     public void completeCheque(ArrayList<ChequeLine> chequeLines) throws DBException {
         if (chequeLines.isEmpty()) return;
 
@@ -107,5 +118,81 @@ public class ChequeService {
             }
         }
         return total;
+    }
+
+    /**
+     * Creates report
+     * @param reportType type of report (X or Z)
+     * @param path path to reports folder
+     * @return number of created report
+     */
+    public int createReport(String reportType, String path) throws DBException {
+        try {
+            int free = 1;
+            for (String filename : new File(path+"\\reports").list()) {
+                try {
+                    int curr = Integer.parseInt(filename.substring(0, filename.length()-5));
+                    if (free <= curr) free = curr + 1;
+                } catch (IndexOutOfBoundsException | NumberFormatException ignored) { }
+            }
+
+            int total = 0;
+            ArrayList<Cheque> cheques = chequeDAO.findChequesSortedByPrice(0, Integer.MAX_VALUE);
+            for (Cheque cheque : cheques) {
+                total += cheque.getPrice();
+            }
+
+            if ("Y".equals(reportType)) {
+                chequeDAO.removeAll();
+            }
+
+
+            XWPFDocument docxModel = new XWPFDocument();
+
+            XWPFParagraph bodyParagraph = docxModel.createParagraph();
+            bodyParagraph.setAlignment(ParagraphAlignment.CENTER);
+            XWPFRun paragraphConfig = bodyParagraph.createRun();
+            paragraphConfig.setFontSize(25);
+            paragraphConfig.setText("Магазин \"Фора\"");
+
+            bodyParagraph = docxModel.createParagraph();
+            bodyParagraph.setAlignment(ParagraphAlignment.CENTER);
+            paragraphConfig = bodyParagraph.createRun();
+            paragraphConfig.setFontSize(25);
+            paragraphConfig.setText("Номер "+free);
+
+            bodyParagraph = docxModel.createParagraph();
+            bodyParagraph.setAlignment(ParagraphAlignment.CENTER);
+            paragraphConfig = bodyParagraph.createRun();
+            paragraphConfig.setFontSize(25);
+            paragraphConfig.setText(LocalDate.now().toString());
+
+            bodyParagraph = docxModel.createParagraph();
+            bodyParagraph.setAlignment(ParagraphAlignment.CENTER);
+            paragraphConfig = bodyParagraph.createRun();
+            paragraphConfig.setBold(true);
+            paragraphConfig.setFontSize(40);
+            paragraphConfig.setText("Y".equals(reportType)?"Y - звіт":"X - звіт");
+
+            bodyParagraph = docxModel.createParagraph();
+            bodyParagraph.setAlignment(ParagraphAlignment.LEFT);
+            paragraphConfig = bodyParagraph.createRun();
+            paragraphConfig.setFontSize(25);
+            paragraphConfig.setText("Кількість чеків - "+cheques.size()+" шт");
+
+            bodyParagraph = docxModel.createParagraph();
+            bodyParagraph.setAlignment(ParagraphAlignment.LEFT);
+            paragraphConfig = bodyParagraph.createRun();
+            paragraphConfig.setFontSize(25);
+            paragraphConfig.setText("Загальна вартість - "+TextService.getInstance().formatPrice(total)+" $");
+
+            FileOutputStream outputStream = new FileOutputStream(path+"\\reports\\"+free+".docx");
+            docxModel.write(outputStream);
+            outputStream.close();
+
+            return free;
+        } catch (NullPointerException | IOException | SQLException e) {
+            throw new DBException(e);
+        }
     }
 }

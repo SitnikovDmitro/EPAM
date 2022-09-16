@@ -14,6 +14,12 @@ public class UserService {
         this.userDAO = userDAO;
     }
 
+    /**
+     * Returns user with giver username and password if exists or null otherwise
+     * @param username username of user
+     * @param password password of user
+     * @return user entity
+     */
     public UserX getUser(String username, String password) throws DBException {
         try {
             UserX found = userDAO.findUserByUsername(username);
@@ -26,6 +32,12 @@ public class UserService {
         }
     }
 
+    /**
+     * Checks if user with given username and password exists in the database
+     * @param username username of user
+     * @param password password of user
+     * @return result
+     */
     public boolean getAccess(String username, String password) throws DBException {
         UserX found = getUser(username, password);
         return found != null && found.getRole() == 2;

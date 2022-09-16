@@ -24,6 +24,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
@@ -40,7 +42,7 @@ public class Controller extends HttpServlet {
 
     private ChequeLineService chequeLineService;
     private ChequeService chequeService;
-    private CommonService commonService;
+    private JsonService jsonService;
     private ProductService productService;
     private UserService userService;
 
@@ -50,7 +52,7 @@ public class Controller extends HttpServlet {
 
         chequeLineService = new ChequeLineService(new ProductDAOImpl());
         chequeService = new ChequeService(new ChequeDAOImpl(), new ChequeLineDAOImpl(new ChequeDAOImpl()));
-        commonService = new CommonService();
+        jsonService = new JsonService();
         productService = new ProductService(new ProductDAOImpl());
         userService = new UserService(new UserDAOImpl());
     }
@@ -89,10 +91,10 @@ public class Controller extends HttpServlet {
         }
     }
 
-    protected void execute(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException, NoSuchMethodException, InvalidParameterException, DBException, EmptyParameterException {
+    protected void execute(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException, NoSuchMethodException, InvalidParameterException, DBException, EmptyParameterException, InvocationTargetException, IllegalAccessException {
         String action = req.getParameter("action");
 
-        if (List.of("showCashierCheque", "showCashierProducts", "finishCashierCheque", "removeCashierCheque", "removeCashierProductFromCheque", "addCashierProductToCheque", "showCashierCheques", "setCashierCheques", "changeCashierLanguage", "showCashierOptions", "createCashierReport", "getCashierLastReport").contains(action)) {
+        /*if (List.of("showCashierCheque", "showCashierProducts", "finishCashierCheque", "removeCashierCheque", "removeCashierProductFromCheque", "addCashierProductToCheque", "showCashierCheques", "setCashierCheques", "changeCashierLanguage", "showCashierOptions", "createCashierReport", "getCashierLastReport").contains(action)) {
             UserX user = (UserX)req.getSession().getAttribute("loggedUser");
             if (user == null || user.getRole() != 1) {
                 resp.sendRedirect("controller?action=error&code=401&description=Unauthorized");
@@ -106,14 +108,41 @@ public class Controller extends HttpServlet {
                 resp.sendRedirect("controller?action=error&code=401&description=Unauthorized");
                 return;
             }
-        }
+        }*/
 
         req.getSession().setAttribute("text", TextService.getInstance());
         if (req.getSession().getAttribute("lang") == null) {
             req.getSession().setAttribute("lang", Lang.RU);
         }
 
-        switch (action) {
+        try {
+            Method method = Controller.class.getMethod(action, HttpServletRequest.class, HttpServletResponse.class);
+            if (!method.isAnnotationPresent(HttpRequestMapping.class)) {
+                logger.error("No annonation");
+                throw new NoSuchMethodException();
+            }
+            if (method.isAnnotationPresent(CashierRequired.class)) {
+                UserX user = (UserX)req.getSession().getAttribute("loggedUser");
+                if (user == null || user.getRole() != 1) {
+                    resp.sendRedirect("controller?action=error&code=401&description=Unauthorized");
+                    return;
+                }
+            }
+            if (method.isAnnotationPresent(MerchandiserRequired.class)) {
+                UserX user = (UserX)req.getSession().getAttribute("loggedUser");
+                if (user == null || user.getRole() != 3) {
+                    resp.sendRedirect("controller?action=error&code=401&description=Unauthorized");
+                    return;
+                }
+            }
+            method.invoke(this, req, resp);
+        } catch (NoSuchMethodException exception) {
+            logger.error("No method for "+action);
+            resp.sendRedirect("controller?action=error&code=404&Invalid command");
+        }
+
+
+        /*switch (action) {
             case "error" : error(req, resp); break;
             case "showCashierCheque" : showCashierCheque(req, resp); break;
             case "login" : login(req, resp); break;
@@ -141,13 +170,14 @@ public class Controller extends HttpServlet {
 
 
             default : resp.sendRedirect("controller?action=error&code=404&Invalid command");
-        }
+        }*/
 
 
 
     }
 
-    protected void login(HttpServletRequest req, HttpServletResponse resp) throws IOException, DBException {
+    @HttpRequestMapping
+    public void login(HttpServletRequest req, HttpServletResponse resp) throws IOException, DBException {
         String password = req.getParameter("password");
         String username = req.getParameter("username");
 
@@ -155,13 +185,15 @@ public class Controller extends HttpServlet {
 
         if (user != null && (user.getRole() == 1 || user.getRole() == 3)) {
             req.getSession().setAttribute("loggedUser", user);
-            resp.getWriter().write(commonService.getJsonWithIntResult(user.getRole()));
+            resp.getWriter().write(jsonService.getJsonWithIntResult(user.getRole()));
         } else {
-            resp.getWriter().write(commonService.getJsonWithIntResult(-1));
+            resp.getWriter().write(jsonService.getJsonWithIntResult(-1));
         }
     }
 
-    protected void deleteMerchandiserProduct(HttpServletRequest req, HttpServletResponse resp) throws IOException, EmptyParameterException, InvalidParameterException, DBException {
+    @MerchandiserRequired
+    @HttpRequestMapping
+    public void deleteMerchandiserProduct(HttpServletRequest req, HttpServletResponse resp) throws IOException, EmptyParameterException, InvalidParameterException, DBException {
         String productCode = req.getParameter("productCode");
 
         productService.setProductAsRemovedByCode(productCode);
@@ -170,7 +202,9 @@ public class Controller extends HttpServlet {
         resp.sendRedirect("controller?action=showMerchandiserProducts&page=1");
     }
 
-    protected void finishCashierCheque(HttpServletRequest req, HttpServletResponse resp) throws IOException, DBException {
+    @CashierRequired
+    @HttpRequestMapping
+    public void finishCashierCheque(HttpServletRequest req, HttpServletResponse resp) throws IOException, DBException {
         ArrayList<ChequeLine> chequeLines = (ArrayList<ChequeLine>)req.getSession().getAttribute("activeChequeLines");
 
         chequeService.completeCheque(chequeLines);
@@ -181,18 +215,22 @@ public class Controller extends HttpServlet {
         resp.sendRedirect("controller?action=showCashierCheque");
     }
 
-    protected void removeCashierCheque(HttpServletRequest req, HttpServletResponse resp) throws IOException, DBException {
+    @CashierRequired
+    @HttpRequestMapping
+    public void removeCashierCheque(HttpServletRequest req, HttpServletResponse resp) throws IOException, DBException {
         String password = req.getParameter("password");
         String username = req.getParameter("username");
 
         if (userService.getAccess(username, password)) {
             req.getSession().setAttribute("activeChequeLines", null);
-            resp.getWriter().write(commonService.getJsonWithBooleanResult(true));
+            resp.getWriter().write(jsonService.getJsonWithBooleanResult(true));
         } else {
-            resp.getWriter().write(commonService.getJsonWithBooleanResult(false));
+            resp.getWriter().write(jsonService.getJsonWithBooleanResult(false));
         }
     }
 
+    @CashierRequired
+    @HttpRequestMapping
     protected void removeCashierProductFromCheque(HttpServletRequest req, HttpServletResponse resp) throws IOException, InvalidParameterException, DBException {
         ArrayList<ChequeLine> chequeLines = (ArrayList<ChequeLine>)req.getSession().getAttribute("activeChequeLines");
         String productCode = req.getParameter("productCode");
@@ -201,26 +239,32 @@ public class Controller extends HttpServlet {
 
         if (userService.getAccess(username, password)) {
             chequeLineService.removeChequeLineFromActiveCheque(chequeLines, productCode);
-            resp.getWriter().write(commonService.getJsonWithBooleanResult(true));
+            resp.getWriter().write(jsonService.getJsonWithBooleanResult(true));
         } else {
-            resp.getWriter().write(commonService.getJsonWithBooleanResult(false));
+            resp.getWriter().write(jsonService.getJsonWithBooleanResult(false));
         }
     }
 
-    protected void createCashierReport(HttpServletRequest req, HttpServletResponse resp) throws IOException, DBException {
+    @CashierRequired
+    @HttpRequestMapping
+    public void createCashierReport(HttpServletRequest req, HttpServletResponse resp) throws IOException, DBException {
         String reportType = req.getParameter("reportType");
         String password = req.getParameter("password");
         String username = req.getParameter("username");
 
         if (userService.getAccess(username, password)) {
-            int code = commonService.createReport(reportType, filePath);
-            resp.getWriter().write(commonService.getJsonWithIntResult(code));
+            int code = chequeService.createReport(reportType, filePath);
+            req.getSession().setAttribute("cheques", null);
+            req.getSession().setAttribute("chequeLines", null);
+            resp.getWriter().write(jsonService.getJsonWithIntResult(code));
         } else {
-            resp.getWriter().write(commonService.getJsonWithIntResult(-1));
+            resp.getWriter().write(jsonService.getJsonWithIntResult(-1));
         }
     }
 
-    protected void getCashierLastReport(HttpServletRequest req, HttpServletResponse resp) throws IOException, DBException {
+    @CashierRequired
+    @HttpRequestMapping
+    public void getCashierLastReport(HttpServletRequest req, HttpServletResponse resp) throws IOException, DBException {
         String number = req.getParameter("number");
 
         ServletOutputStream out = resp.getOutputStream();
@@ -232,7 +276,9 @@ public class Controller extends HttpServlet {
         out.close();
     }
 
-    protected void addCashierProductToCheque(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException, InvalidParameterException, DBException {
+    @CashierRequired
+    @HttpRequestMapping
+    public void addCashierProductToCheque(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException, InvalidParameterException, DBException {
         ArrayList<ChequeLine> chequeLines = (ArrayList<ChequeLine>)req.getSession().getAttribute("activeChequeLines");
         String productCode = req.getParameter("productCode");
         String amount = req.getParameter("amount");
@@ -242,8 +288,9 @@ public class Controller extends HttpServlet {
         resp.sendRedirect("controller?action=showCashierCheque");
     }
 
-
-    protected void showCashierCheque(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException {
+    @CashierRequired
+    @HttpRequestMapping
+    public void showCashierCheque(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException {
         ArrayList<ChequeLine> chequeLines = (ArrayList<ChequeLine>)req.getSession().getAttribute("activeChequeLines");
         if (chequeLines == null) {
             chequeLines = new ArrayList<>();
@@ -255,7 +302,9 @@ public class Controller extends HttpServlet {
         req.getRequestDispatcher("cashier/cheque.jsp").forward(req, resp);
     }
 
-    protected void setCashierProducts(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException, InvalidParameterException, DBException {
+    @CashierRequired
+    @HttpRequestMapping
+    public void setCashierProducts(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException, InvalidParameterException, DBException {
         String name = req.getParameter("name");
         String code = req.getParameter("code");
         ArrayList<Product> products = new ArrayList<>();
@@ -268,7 +317,9 @@ public class Controller extends HttpServlet {
         resp.sendRedirect("controller?action=showCashierProducts&page=1");
     }
 
-    protected void showCashierProducts(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException, InvalidParameterException, DBException {
+    @CashierRequired
+    @HttpRequestMapping
+    public void showCashierProducts(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException, InvalidParameterException, DBException {
         String page = req.getParameter("page");
         ArrayList<Product> products = (ArrayList<Product>)req.getSession().getAttribute("products");
 
@@ -288,7 +339,9 @@ public class Controller extends HttpServlet {
         req.getRequestDispatcher("cashier/products.jsp").forward(req, resp);
     }
 
-    protected void setMerchandiserProducts(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException, InvalidParameterException, DBException {
+    @MerchandiserRequired
+    @HttpRequestMapping
+    public void setMerchandiserProducts(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException, InvalidParameterException, DBException {
         String name = req.getParameter("name"), code = req.getParameter("code");
         ArrayList<Product> products = new ArrayList<>();
 
@@ -300,7 +353,9 @@ public class Controller extends HttpServlet {
         resp.sendRedirect("controller?action=showMerchandiserProducts&page=1");
     }
 
-    protected void showMerchandiserProducts(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException, InvalidParameterException, DBException {
+    @MerchandiserRequired
+    @HttpRequestMapping
+    public void showMerchandiserProducts(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException, InvalidParameterException, DBException {
         String page = req.getParameter("page");
         ArrayList<Product> products = (ArrayList<Product>)req.getSession().getAttribute("products");
 
@@ -320,11 +375,15 @@ public class Controller extends HttpServlet {
         req.getRequestDispatcher("merchandiser/products.jsp").forward(req, resp);
     }
 
-    protected void showMerchandiserProduct(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException {
+    @MerchandiserRequired
+    @HttpRequestMapping
+    public void showMerchandiserProduct(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException {
         req.getRequestDispatcher("merchandiser/product.jsp").forward(req, resp);
     }
 
-    protected void showCashierCheques(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException {
+    @CashierRequired
+    @HttpRequestMapping
+    public void showCashierCheques(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException {
         String page = req.getParameter("page");
         ArrayList<Cheque> cheques = (ArrayList<Cheque>)req.getSession().getAttribute("cheques");
         ArrayList<ArrayList<ChequeLine>> chequeLines = (ArrayList<ArrayList<ChequeLine>>)req.getSession().getAttribute("chequeLines");
@@ -350,7 +409,9 @@ public class Controller extends HttpServlet {
         req.getRequestDispatcher("cashier/cheques.jsp").forward(req, resp);
     }
 
-    protected void setCashierCheques(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException {
+    @CashierRequired
+    @HttpRequestMapping
+    public void setCashierCheques(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException {
         String fromPrice = req.getParameter("fromPrice");
         String toPrice = req.getParameter("toPrice");
         String sortCriteria = req.getParameter("sortCriteria");
@@ -368,7 +429,9 @@ public class Controller extends HttpServlet {
         resp.sendRedirect("controller?action=showCashierCheques&page=1");
     }
 
-    protected void createMerchandiserProduct(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException, EmptyParameterException, InvalidParameterException, DBException {
+    @MerchandiserRequired
+    @HttpRequestMapping
+    public void createMerchandiserProduct(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException, EmptyParameterException, InvalidParameterException, DBException {
         String title = req.getParameter("title");
         String countable = req.getParameter("countable");
         String amount = req.getParameter("amount");
@@ -381,7 +444,9 @@ public class Controller extends HttpServlet {
         resp.sendRedirect("controller?action=showMerchandiserProducts&page=1");
     }
 
-    protected void deliverMerchandiserProduct(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException, EmptyParameterException, InvalidParameterException, DBException {
+    @MerchandiserRequired
+    @HttpRequestMapping
+    public void deliverMerchandiserProduct(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException, EmptyParameterException, InvalidParameterException, DBException {
         String productCode = req.getParameter("productCode");
         String productAmount = req.getParameter("amount");
 
@@ -391,7 +456,9 @@ public class Controller extends HttpServlet {
         resp.sendRedirect("controller?action=showMerchandiserProducts&page=1");
     }
 
-    protected void changeMerchandiserLanguage(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException, EmptyParameterException, InvalidParameterException, DBException {
+    @MerchandiserRequired
+    @HttpRequestMapping
+    public void changeMerchandiserLanguage(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException, EmptyParameterException, InvalidParameterException, DBException {
         String lang = req.getParameter("lang");
 
         req.getSession().setAttribute("lang", "UK".equals(lang) ? Lang.UK : "RU".equals(lang) ? Lang.RU : Lang.EN);
@@ -399,7 +466,9 @@ public class Controller extends HttpServlet {
         resp.sendRedirect("controller?action=showMerchandiserOptions");
     }
 
-    protected void changeCashierLanguage(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException, EmptyParameterException, InvalidParameterException, DBException {
+    @CashierRequired
+    @HttpRequestMapping
+    public void changeCashierLanguage(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException, EmptyParameterException, InvalidParameterException, DBException {
         String lang = req.getParameter("lang");
 
         req.getSession().setAttribute("lang", "UK".equals(lang) ? Lang.UK : "RU".equals(lang) ? Lang.RU : Lang.EN);
@@ -407,32 +476,39 @@ public class Controller extends HttpServlet {
         resp.sendRedirect("controller?action=showCashierOptions");
     }
 
-    protected void showMerchandiserOptions(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException, EmptyParameterException, InvalidParameterException, DBException {
+    @MerchandiserRequired
+    @HttpRequestMapping
+    public void showMerchandiserOptions(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException, EmptyParameterException, InvalidParameterException, DBException {
         resp.sendRedirect("merchandiser/options.jsp");
     }
 
-    protected void showCashierOptions(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException, EmptyParameterException, InvalidParameterException, DBException {
+    @CashierRequired
+    @HttpRequestMapping
+    public void showCashierOptions(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException, EmptyParameterException, InvalidParameterException, DBException {
         resp.sendRedirect("cashier/options.jsp");
     }
 
-    protected void showErrorPage(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException {
+    @HttpRequestMapping
+    public void showErrorPage(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException {
         req.setAttribute("message", req.getParameter("message"));
         resp.sendRedirect(req.getContextPath());
     }
 
-
-    protected void logout(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    @HttpRequestMapping
+    public void logout(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         req.getSession().setAttribute("loggedUser", null);
         resp.sendRedirect(req.getContextPath());
     }
 
-    protected void logout(HttpServletRequest req, HttpServletResponse resp, String message) throws IOException, ServletException {
+
+    public void logout(HttpServletRequest req, HttpServletResponse resp, String message) throws IOException, ServletException {
         req.setAttribute("message", message);
         req.getSession().setAttribute("loggedUser", null);
         req.getRequestDispatcher("").forward(req, resp);
     }
 
-    protected void error(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
+    @HttpRequestMapping
+    public void error(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
         req.setAttribute("code", req.getParameter("code"));
         req.setAttribute("description", req.getParameter("description"));
 

@@ -23,6 +23,12 @@ public class ProductService {
     }
 
 
+    /**
+     * Finds products in database
+     * @param name part of product or products title
+     * @param code products code
+     * @param products founded products
+     */
     public void findProducts(String name, String code, ArrayList<Product> products) throws InvalidParameterException, DBException {
         try {
             if (code == null || code.isEmpty()) {
@@ -40,6 +46,13 @@ public class ProductService {
         }
     }
 
+    /**
+     * Paginates products
+     * @param page current page
+     * @param source list of founded products
+     * @param dest list of products on current page
+     * @param pages list of pages which are available from current one
+     */
     public void findProducts(String page, ArrayList<Product> source, ArrayList<Product> dest, ArrayList<Integer> pages) {
         if (source.isEmpty()) return;
 
@@ -72,6 +85,10 @@ public class ProductService {
         if (pagesCount > 0 && p != pagesCount) pages.add(pagesCount);
     }
 
+    /**
+     * Removes product
+     * @param productCode code of product
+     */
     public void setProductAsRemovedByCode(String productCode) throws EmptyParameterException, InvalidParameterException, DBException {
         if (productCode == null || productCode.isEmpty()) throw new EmptyParameterException();
 
@@ -87,6 +104,15 @@ public class ProductService {
         }
     }
 
+    /**
+     * Creates a new product
+     * @param pathToImages path to folder with product images
+     * @param title title of the product
+     * @param amount start amount of product (items or grams)
+     * @param price price of product (dollars/item or dollars/kilogram)
+     * @param countable product countable (in items or in grams)
+     * @param image title of the product
+     */
     public void createProduct(String pathToImages, String title, String amount, String price, String countable, Part image) throws InvalidParameterException, DBException, EmptyParameterException {
         if (title == null || title.isEmpty() || amount == null || amount.isEmpty() || price == null || price.isEmpty()) throw new EmptyParameterException();
 
@@ -107,6 +133,11 @@ public class ProductService {
         }
     }
 
+    /**
+     * Makes new deliver of product
+     * @param productCode code of product
+     * @param productAmount amount of product
+     */
     public void deliverProduct(String productCode, String productAmount) throws InvalidParameterException, DBException, EmptyParameterException {
         if (productCode == null || productCode.isEmpty() || productAmount == null || productAmount.isEmpty()) throw new EmptyParameterException();
 

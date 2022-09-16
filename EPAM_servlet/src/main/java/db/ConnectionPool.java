@@ -23,7 +23,7 @@ public class ConnectionPool {
 
     private ConnectionPool() throws IOException, URISyntaxException {
 
-        JsonNode node = new ObjectMapper().readTree(Paths.get(getClass().getClassLoader().getResource("db.json").toURI()).toFile());
+        JsonNode node = new ObjectMapper().readTree(getClass().getClassLoader().getResource("db.json"));
 
         ds = new MysqlConnectionPoolDataSource();
         ds.setPassword(node.get("password").asText());

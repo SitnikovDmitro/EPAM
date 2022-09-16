@@ -169,7 +169,7 @@
             var result = data.result;
             if (result >= 0) {
               var myModal = new bootstrap.Modal(document.getElementById('seniorCashierVerificationModal'));
-              myModal.close();
+              myModal.hide();
               window.location.href = "${pageContext.request.contextPath}/controller?action=getCashierLastReport&number="+data.result;
             } else {
               usernameInput.className = "form-control is-invalid";

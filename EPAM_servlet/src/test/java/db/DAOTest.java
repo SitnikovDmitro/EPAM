@@ -7,15 +7,17 @@ import entity.UserX;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import service.ChequeLineService;
+import service.ChequeService;
 
 import java.sql.*;
 import java.util.ArrayList;
 
 public class DAOTest {
-    private UserDAO userDAO;
-    private ProductDAO productDAO;
-    private ChequeDAO chequeDAO;
-    private ChequeLineDAO chequeLineDAO;
+    private final UserDAO userDAO;
+    private final ProductDAO productDAO;
+    private final ChequeDAO chequeDAO;
+    private final ChequeLineDAO chequeLineDAO;
 
     public DAOTest() {
         userDAO = new UserDAOImpl();
@@ -47,6 +49,16 @@ public class DAOTest {
         } catch (SQLException ex) {
             ex.printStackTrace();
             throw ex;
+        }
+
+        ChequeDAO chequeDAO = new ChequeDAOImpl();
+        ChequeLineDAO chequeLineDAO = new ChequeLineDAOImpl(chequeDAO);
+        ChequeLineService chequeLineService = new ChequeLineService(new ProductDAOImpl());
+
+        ArrayList<Cheque> cheques = chequeDAO.findChequesSortedByPrice(0, Integer.MAX_VALUE);
+        for (Cheque cheque : cheques) {
+            cheque.setPrice(chequeLineService.computePrice(chequeLineDAO.findChequeLinesByChequeId(cheque.getId())));
+            chequeDAO.updateCheque(cheque);
         }
     }
 
@@ -183,7 +195,7 @@ public class DAOTest {
 
         for (int i = 0; i < cheques.size()-1; i++) {
             int prev = cheques.get(i).getPrice(), next = cheques.get(i+1).getPrice();
-            Assertions.assertTrue(prev >= next);
+            Assertions.assertTrue(prev <= next);
         }
     }
 

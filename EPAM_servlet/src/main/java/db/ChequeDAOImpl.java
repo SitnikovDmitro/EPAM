@@ -119,4 +119,17 @@ public class ChequeDAOImpl implements ChequeDAO{
             throw ex;
         }
     }
+
+    @Override
+    public void removeAll() throws SQLException {
+        try(Connection con = ConnectionPool.getInstance().getConnection();
+            Statement stmt = con.createStatement()) {
+            stmt.addBatch("DELETE FROM chequeLines;");
+            stmt.addBatch("DELETE FROM cheques;");
+            stmt.executeBatch();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            throw ex;
+        }
+    }
 }
