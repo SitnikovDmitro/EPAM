@@ -1,20 +1,25 @@
 package com.ra.controller;
 
 import com.ra.model.data.CashierModel;
-import com.ra.model.data.MerchandiserModel;
 import com.ra.model.entity.*;
-import com.ra.model.enums.Lang;
-import com.ra.model.exceptions.DBException;
-import com.ra.model.exceptions.InvalidParameterException;
-import com.ra.model.service.*;
+import com.ra.enums.Lang;
+import com.ra.exceptions.DBException;
+import com.ra.exceptions.InvalidParameterException;
+import com.ra.service.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpSession;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
@@ -108,13 +113,29 @@ public class CashierController {
     @ResponseBody
     public IntResult createReport(@RequestParam(required = false) String password,
                                   @RequestParam(required = false) String username,
-                                  @RequestParam(required = false) String reportType) throws DBException, InvalidParameterException {
+                                  @RequestParam(required = false) String reportType,
+                                  @ModelAttribute("data") CashierModel data) throws DBException, InvalidParameterException {
 
         if (userService.getAccess(username, password)) {
-            int code = -1;//CommonService.getInstance().createReport(reportType, filePath);
+            int code = chequeService.createReport(reportType);
+            data.setChequesChanged(true);
             return new IntResult(code);
         }
         return new IntResult(-1);
+    }
+
+
+    @GetMapping(path = "/getReport", produces = "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    public ResponseEntity<Resource> getReport(@RequestParam String number) throws IOException {
+        File file = new File("src/main/webapp/files/reports/"+number+".docx");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Disposition", "attachment; filename=\"Report.docx\"");
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .contentLength(file.length())
+                .body(new InputStreamResource(new FileInputStream(file)));
     }
 
     @PostMapping("/addProductToCheque")

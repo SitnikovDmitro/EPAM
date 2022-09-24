@@ -1,25 +1,16 @@
 package com.ra.controller;
 
 import com.ra.model.entity.IntResult;
-import com.ra.model.entity.Product;
 import com.ra.model.entity.User;
-import com.ra.model.enums.Lang;
-import com.ra.model.exceptions.DBException;
-import com.ra.model.repository.UserRepository;
-import com.ra.model.service.ProductService;
-import com.ra.model.service.TextService;
-import com.ra.model.service.UserService;
+import com.ra.exceptions.DBException;
+import com.ra.repository.UserRepository;
+import com.ra.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.io.IOException;
-import java.util.ArrayList;
 
 @Controller
 public class LoginController {

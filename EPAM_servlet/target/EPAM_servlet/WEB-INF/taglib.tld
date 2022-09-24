@@ -9,6 +9,6 @@
 
     <tag>
         <name>myName</name>
-        <tag-class>tags.MyNameSupport</tag-class>
+        <tag-class>app.tags.MyNameSupport</tag-class>
     </tag>
 </taglib>

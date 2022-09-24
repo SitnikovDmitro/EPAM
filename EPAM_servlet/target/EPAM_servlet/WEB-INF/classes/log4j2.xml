@@ -8,7 +8,7 @@
     </Appenders>
 
     <Loggers>
-        <Logger name= "servlets.Controller" level="debug" additivity="true">
+        <Logger name= "com.servlets.Controller" level="debug" additivity="true">
             <AppenderRef ref="Console"/>
         </Logger>
 

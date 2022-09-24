@@ -3,7 +3,7 @@ package com.ra.model.data;
 import com.ra.model.entity.Cheque;
 import com.ra.model.entity.ChequeLine;
 import com.ra.model.entity.Product;
-import com.ra.model.enums.Lang;
+import com.ra.enums.Lang;
 
 import java.util.ArrayList;
 

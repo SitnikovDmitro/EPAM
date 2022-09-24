@@ -12,7 +12,7 @@
     "Countable": "Countable",
     "Create product": "Create product",
     "Create X-report": "Create X-report",
-    "Create Y-report": "Create Y-report",
+    "Create Z-report": "Create Z-report",
     "Created": "Created",
     "Delete": "Delete",
     "Delivery": "Delivery",
@@ -52,7 +52,10 @@
     "Total count": "Total count",
     "Total weight": "Total weight",
     "Username": "Username",
-    "Weight": "Weight"
+    "Weight": "Weight",
+    "Finish cheque": "Finish cheque",
+    "Cash": "Cash",
+    "Change": "Change"
   },
   "ru": {
     "Add first product": "Добавить первый товар",
@@ -67,7 +70,7 @@
     "Countable": "Перечисляемый",
     "Create product": "Создать товар",
     "Create X-report": "Создать X-отчет",
-    "Create Y-report": "Создать Y-отчет",
+    "Create Z-report": "Создать Z-отчет",
     "Created": "Созданый",
     "Delete": "Удалить",
     "Delivery": "Поставка",
@@ -107,7 +110,10 @@
     "Total count": "Общее количество",
     "Total weight": "Общий вес",
     "Username": "Имя пользователя",
-    "Weight": "Вес"
+    "Weight": "Вес",
+    "Finish cheque": "Завершить чек",
+    "Cash": "Наличные",
+    "Change": "Сдача"
   },
   "uk": {
     "Add first product": "Додати перший товар",
@@ -122,7 +128,7 @@
     "Countable": "Зчислюваний",
     "Create product": "Створити товар",
     "Create X-report": "Створити X-звіт",
-    "Create Y-report": "Створити Y-звіт",
+    "Create Z-report": "Створити Z-звіт",
     "Created": "Створений",
     "Delete": "Видалити",
     "Delivery": "Поставка",
@@ -162,6 +168,9 @@
     "Total count": "Загальна кількість",
     "Total weight": "Загальна вага",
     "Username": "Ім'я користувача",
-    "Weight": "Вага"
+    "Weight": "Вага",
+    "Finish cheque": "Завершити чек",
+    "Cash": "Готівка",
+    "Change": "Решта"
   }
 }

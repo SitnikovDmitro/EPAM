@@ -8,7 +8,9 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <link href="/static/bootstrap.css" rel="stylesheet">
+    <script src="/static/jquery.js"></script>
+    <script src="/static/bootstrap.js"></script>
   </head>
   <body>
 
@@ -168,8 +170,7 @@
           data => {
             var result = data.result;
             if (result >= 0) {
-              var myModal = new bootstrap.Modal(document.getElementById('seniorCashierVerificationModal'));
-              myModal.close();
+              $('#seniorCashierVerificationModal').modal('hide');
               window.location.href = "${pageContext.request.contextPath}/cashier/getReport?number="+data.result;
             } else {
               usernameInput.className = "form-control is-invalid";
@@ -190,12 +191,8 @@
         usernameInput.value = "";
         passwordInput.value = "";
         reportTypeInput.value = reportType;
-        var myModal = new bootstrap.Modal(document.getElementById('seniorCashierVerificationModal'));
-        myModal.show();
+        $('#seniorCashierVerificationModal').modal('show');
       }
     </script>
-
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
   </body>
 </html>

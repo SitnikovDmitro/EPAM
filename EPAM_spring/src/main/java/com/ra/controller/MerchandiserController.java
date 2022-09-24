@@ -2,10 +2,10 @@ package com.ra.controller;
 
 import com.ra.model.data.MerchandiserModel;
 import com.ra.model.entity.Product;
-import com.ra.model.enums.Lang;
-import com.ra.model.exceptions.DBException;
-import com.ra.model.exceptions.InvalidParameterException;
-import com.ra.model.service.*;
+import com.ra.enums.Lang;
+import com.ra.exceptions.DBException;
+import com.ra.exceptions.InvalidParameterException;
+import com.ra.service.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

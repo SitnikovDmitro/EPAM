@@ -1,8 +1,7 @@
 package com.ra.model.data;
 
 import com.ra.model.entity.Product;
-import com.ra.model.enums.Lang;
-import org.springframework.lang.NonNull;
+import com.ra.enums.Lang;
 
 import java.util.ArrayList;
 
