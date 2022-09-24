@@ -24,6 +24,7 @@ public class ProductService {
 
     public void findProducts(String name, String code, ArrayList<Product> products) throws InvalidParameterException, DBException {
         try {
+            products.clear();
             if (code == null || code.isEmpty()) {
                 if (name == null) name = "";
                 products.addAll(productRepository.findProductsByPattern("%"+name+"%"));
@@ -33,6 +34,7 @@ public class ProductService {
                     products.add(productOptional.get());
                 }
             }
+            products.removeIf(Product::isRemoved);
         } catch (NumberFormatException exception) {
             throw new InvalidParameterException(exception);
         } catch (Exception exception) {
@@ -93,7 +95,7 @@ public class ProductService {
             Product product = new Product(null, productPrice, productAmount, productCountable, false, title);
             productRepository.save(product);
 
-            File file = new File("src/main/resources/files/images/"+product.getCode()+".jpg");
+            File file = new File("src/main/webapp/files/images/"+product.getCode()+".jpg");
             Files.copy(image.getInputStream(), file.toPath());
         } catch (IOException exception) {
             throw new DBException(exception);

@@ -76,14 +76,11 @@
 
 
 
-
-
-
         <div class="row row-cols-1 row-cols-md-2 g-4">
           <c:forEach var="product" items="${pageProducts}">
             <div class="col">
               <div class="card h-100">
-                <img class="card-img-top" src="../../resources/files/images/${product.code}.jpg" onerror="this.onerror=null; this.src='files/images/default.jpg';" alt="Product image" height="200">
+                <img class="card-img-top" src="/files/images/${product.code}.jpg" onerror="this.onerror=null; this.src='/files/images/default.jpg';" alt="Product image" height="200">
                 <div class="card-body">
                   <h5 class="card-title">${product.title}</h5>
                 </div>

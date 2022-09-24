@@ -100,7 +100,7 @@
         <div class="card mb-3">
           <div class="card-body">
              <button type="button" class="btn btn-primary" onclick="openModalForCreateReport('X');">${text.translate('Create X-report', lang)}</button>
-             <button type="button" class="btn btn-primary" onclick="openModalForCreateReport('Y');">${text.translate('Create Y-report', lang)}</button>
+             <button type="button" class="btn btn-primary" onclick="openModalForCreateReport('Z');">${text.translate('Create Z-report', lang)}</button>
           </div>
         </div>
 
@@ -108,7 +108,7 @@
           <div class="container col-sm-6">
 
             <c:choose>
-              <c:when test="${not empty cheques}">
+              <c:when test="${not empty pageCheques}">
                 <c:forEach var="cheque" items="${pageCheques}" varStatus="loop">
 
                   <div class="card mb-3">

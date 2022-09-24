@@ -1,5 +1,7 @@
 package com.ra.controller;
 
+import com.ra.model.data.CashierModel;
+import com.ra.model.data.MerchandiserModel;
 import com.ra.model.entity.*;
 import com.ra.model.enums.Lang;
 import com.ra.model.exceptions.DBException;
@@ -19,7 +21,7 @@ import java.util.ArrayList;
 
 @Controller
 @RequestMapping("/cashier")
-@SessionAttributes({"products", "cheques", "chequeLines", "activeChequeLines"})
+@SessionAttributes("data")
 public class CashierController {
     @Autowired
     private ProductService productService;
@@ -32,43 +34,33 @@ public class CashierController {
 
     private final Logger logger = LoggerFactory.getLogger(CashierController.class);
 
-    @ModelAttribute("products")
-    public ArrayList<Product> createProducts() {
-        return new ArrayList<>();
-    }
-    @ModelAttribute("cheques")
-    public ArrayList<Product> createCheques() {
-        return new ArrayList<>();
-    }
-    @ModelAttribute("chequeLines")
-    public ArrayList<Product> createChequeLines() {
-        return new ArrayList<>();
-    }
-    @ModelAttribute("activeChequeLines")
-    public ArrayList<Product> createActiveChequeLines() {
-        return new ArrayList<>();
+    @ModelAttribute("data")
+    public CashierModel init() {
+        return new CashierModel();
     }
 
 
     @GetMapping("/showProducts")
     public String showProducts(@RequestParam(required = false) String page,
-                               Model model,
-                               HttpSession session) throws InvalidParameterException, DBException {
+                               @ModelAttribute("data") CashierModel data,
+                               Model model) throws InvalidParameterException, DBException {
 
-        ArrayList<Product> products = (ArrayList<Product>)session.getAttribute("products");
-        if (products == null) {
-            products = new ArrayList<>();
-            productService.findProducts(null, null, products);
-            session.setAttribute("products", products);
+        if (data.isProductsChanged()) {
+            productService.findProducts(data.getName(), data.getCode(), data.getProducts());
+            data.setProductsChanged(false);
         }
 
         ArrayList<Product> pageProducts = new ArrayList<>();
         ArrayList<Integer> pages = new ArrayList<>();
 
-        productService.findProducts(page, products, pageProducts, pages);
+        productService.findProducts(page, data.getProducts(), pageProducts, pages);
 
         model.addAttribute("pageProducts", pageProducts);
         model.addAttribute("pages", pages);
+        model.addAttribute("name", data.getName());
+        model.addAttribute("code", data.getCode());
+        model.addAttribute("lang", data.getLang());
+        model.addAttribute("text", TextService.getInstance());
 
         return "cashier/products";
     }
@@ -77,15 +69,10 @@ public class CashierController {
 
 
     @GetMapping("/finishCheque")
-    public String finishCheque(@RequestParam(required = false) String name,
-                               @RequestParam(required = false) String code,
-                               @ModelAttribute("activeChequeLines") ArrayList<ChequeLine> activeChequeLines,
-                               HttpSession session) throws InvalidParameterException, DBException {
+    public String finishCheque(@ModelAttribute("data") CashierModel data) throws InvalidParameterException, DBException {
 
-        chequeService.completeCheque(activeChequeLines);
-        session.setAttribute("activeChequeLines", null);
-        session.setAttribute("chequeLines", null);
-        session.setAttribute("cheques", null);
+        chequeService.completeCheque(data.getActiveChequeLines());
+        data.setChequesChanged(true);
 
         return "redirect:/cashier/showCheque";
     }
@@ -94,10 +81,10 @@ public class CashierController {
     @ResponseBody
     public BooleanResult removeCheque(@RequestParam(required = false) String password,
                                       @RequestParam(required = false) String username,
-                                      HttpSession session) throws DBException {
+                                      @ModelAttribute("data") CashierModel data) throws DBException {
 
         if (userService.getAccess(username, password)) {
-            session.setAttribute("activeChequeLines", null);
+            data.getActiveChequeLines().clear();
             return new BooleanResult(true);
         }
         return new BooleanResult(false);
@@ -108,10 +95,10 @@ public class CashierController {
     public BooleanResult removeProductFromCheque(@RequestParam(required = false) String password,
                                                  @RequestParam(required = false) String username,
                                                  @RequestParam(required = false) String productCode,
-                                                 @ModelAttribute("activeChequeLines") ArrayList<ChequeLine> activeChequeLines) throws DBException, InvalidParameterException {
+                                                 @ModelAttribute("data") CashierModel data) throws DBException, InvalidParameterException {
 
         if (userService.getAccess(username, password)) {
-            chequeLineService.removeChequeLineFromActiveCheque(activeChequeLines, productCode);
+            chequeLineService.removeChequeLineFromActiveCheque(data.getActiveChequeLines(), productCode);
             return new BooleanResult(true);
         }
         return new BooleanResult(false);
@@ -133,19 +120,21 @@ public class CashierController {
     @PostMapping("/addProductToCheque")
     public String addProductToCheque(@RequestParam(required = false) String productCode,
                                      @RequestParam(required = false) String amount,
-                                     @ModelAttribute("activeChequeLines") ArrayList<ChequeLine> activeChequeLines) throws DBException, InvalidParameterException {
+                                     @ModelAttribute("data") CashierModel data) throws DBException, InvalidParameterException {
 
-        chequeLineService.addChequeLineToActiveCheque(activeChequeLines, productCode, amount);
+        chequeLineService.addChequeLineToActiveCheque(data.getActiveChequeLines(), productCode, amount);
 
         return "redirect:/cashier/showCheque";
     }
 
     @GetMapping("/showCheque")
-    public String showCheque(@ModelAttribute("activeChequeLines") ArrayList<ChequeLine> activeChequeLines,
+    public String showCheque(@ModelAttribute("data") CashierModel data,
                              Model model) {
 
-        model.addAttribute("price", chequeLineService.computePrice(activeChequeLines));
-        model.addAttribute("chequeLines", activeChequeLines);
+        model.addAttribute("price", chequeLineService.computePrice(data.getActiveChequeLines()));
+        model.addAttribute("chequeLines", data.getActiveChequeLines());
+        model.addAttribute("lang", data.getLang());
+        model.addAttribute("text", TextService.getInstance());
 
         return "cashier/cheque";
     }
@@ -153,42 +142,39 @@ public class CashierController {
     @PostMapping("/setProducts")
     public String setProducts(@RequestParam(required = false) String name,
                               @RequestParam(required = false) String code,
-                              @ModelAttribute("products") ArrayList<Product> products,
-                              HttpSession session) throws InvalidParameterException, DBException {
+                              @ModelAttribute("data") CashierModel data) throws InvalidParameterException, DBException {
 
-        productService.findProducts(name, code, products);
-
-        session.setAttribute("name", name);
-        session.setAttribute("code", code);
+        productService.findProducts(name, code, data.getProducts());
+        data.setName(name);
+        data.setCode(code);
 
         return "redirect:/cashier/showProducts";
     }
 
     @GetMapping("/showCheques")
     public String showCheques(@RequestParam(required = false) String page,
-                              Model model,
-                              HttpSession session) throws SQLException {
+                              @ModelAttribute("data") CashierModel data,
+                              Model model) throws SQLException {
 
-        ArrayList<Cheque> cheques = (ArrayList<Cheque>)session.getAttribute("cheques");
-        ArrayList<ArrayList<ChequeLine>> chequeLines = (ArrayList<ArrayList<ChequeLine>>)session.getAttribute("chequeLines");
-
-        if (cheques == null || chequeLines == null) {
-            cheques = new ArrayList<>();
-            chequeLines = new ArrayList<>();
-            chequeService.findCheques(null, null, null, cheques, chequeLines);
-            session.setAttribute("cheques", cheques);
-            session.setAttribute("chequeLines", chequeLines);
+        if (data.isChequesChanged()) {
+            chequeService.findCheques(data.getFromPrice(), data.getToPrice(), data.getSortCriteria(), data.getCheques(), data.getChequeLines());
+            data.setChequesChanged(false);
         }
 
         ArrayList<Cheque> pageCheques = new ArrayList<>();
         ArrayList<ArrayList<ChequeLine>> pageChequeLines = new ArrayList<>();
         ArrayList<Integer> pages = new ArrayList<>();
 
-        chequeService.findCheques(page, cheques, chequeLines, pageCheques, pageChequeLines, pages);
+        chequeService.findCheques(page, data.getCheques(), data.getChequeLines(), pageCheques, pageChequeLines, pages);
 
         model.addAttribute("pageCheques", pageCheques);
         model.addAttribute("pageChequeLines", pageChequeLines);
         model.addAttribute("pages", pages);
+        model.addAttribute("fromPrice", data.getFromPrice());
+        model.addAttribute("toPrice", data.getToPrice());
+        model.addAttribute("sortCriteria", data.getSortCriteria());
+        model.addAttribute("lang", data.getLang());
+        model.addAttribute("text", TextService.getInstance());
 
         return "cashier/cheques";
     }
@@ -198,29 +184,32 @@ public class CashierController {
     public String setCheques(@RequestParam(required = false) String fromPrice,
                              @RequestParam(required = false) String toPrice,
                              @RequestParam(required = false) String sortCriteria,
-                             @ModelAttribute("cheques") ArrayList<Cheque> cheques,
-                             @ModelAttribute("chequeLines") ArrayList<ArrayList<ChequeLine>> chequeLines,
-                             HttpSession session) throws InvalidParameterException, DBException, SQLException {
+                             @ModelAttribute("data") CashierModel data) throws InvalidParameterException, DBException, SQLException {
 
-        chequeService.findCheques(fromPrice, toPrice, sortCriteria, cheques, chequeLines);
-
-        session.setAttribute("fromPrice", fromPrice);
-        session.setAttribute("toPrice", toPrice);
-        session.setAttribute("sortCriteria", sortCriteria);
+        chequeService.findCheques(fromPrice, toPrice, sortCriteria, data.getCheques(), data.getChequeLines());
+        data.setFromPrice(fromPrice);
+        data.setToPrice(toPrice);
+        data.setSortCriteria(sortCriteria);
 
         return "redirect:/cashier/showCheques";
     }
 
     @GetMapping("/changeLanguage")
     public String changeLanguage(@RequestParam(required = false) String lang,
-                                 HttpSession session){
-        session.setAttribute("lang", "UK".equals(lang) ? Lang.UK : "RU".equals(lang) ? Lang.RU : Lang.EN);
+                                 @ModelAttribute("data") CashierModel data) {
+
+        data.setLang("UK".equals(lang) ? Lang.UK : "RU".equals(lang) ? Lang.RU : Lang.EN);
 
         return "redirect:/cashier/showOptions";
     }
 
     @GetMapping("/showOptions")
-    public String showOptions(){
+    public String showOptions(@ModelAttribute("data") CashierModel data,
+                              Model model) {
+
+        model.addAttribute("lang", data.getLang());
+        model.addAttribute("text", TextService.getInstance());
+
         return "cashier/options";
     }
 }

@@ -37,14 +37,14 @@
         </c:if>
 
         <c:if test="${lang == 'RU'}">
-          <a type="button" href="${pageContext.request.contextPath}/merchandiser/changeLanguage&lang=UK" class="btn btn-secondary">УКР</a>
+          <a type="button" href="${pageContext.request.contextPath}/merchandiser/changeLanguage?lang=UK" class="btn btn-secondary">УКР</a>
           <a type="button" class="btn btn-outline-secondary">РУС</a>
-          <a type="button" href="${pageContext.request.contextPath}/merchandiser/changeLanguage&lang=EN" class="btn btn-secondary">ENG</a>
+          <a type="button" href="${pageContext.request.contextPath}/merchandiser/changeLanguage?lang=EN" class="btn btn-secondary">ENG</a>
         </c:if>
 
         <c:if test="${lang == 'EN'}">
-          <a type="button" href="${pageContext.request.contextPath}/merchandiser/changeLanguage&lang=UK" class="btn btn-secondary">УКР</a>
-          <a type="button" href="${pageContext.request.contextPath}/merchandiser/changeLanguage&lang=RU" class="btn btn-secondary">РУС</a>
+          <a type="button" href="${pageContext.request.contextPath}/merchandiser/changeLanguage?lang=UK" class="btn btn-secondary">УКР</a>
+          <a type="button" href="${pageContext.request.contextPath}/merchandiser/changeLanguage?lang=RU" class="btn btn-secondary">РУС</a>
           <a type="button" class="btn btn-outline-secondary">ENG</a>
         </c:if>
       </div>

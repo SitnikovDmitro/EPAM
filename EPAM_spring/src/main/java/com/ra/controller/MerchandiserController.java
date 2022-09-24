@@ -1,13 +1,11 @@
 package com.ra.controller;
 
+import com.ra.model.data.MerchandiserModel;
 import com.ra.model.entity.Product;
 import com.ra.model.enums.Lang;
 import com.ra.model.exceptions.DBException;
 import com.ra.model.exceptions.InvalidParameterException;
-import com.ra.model.service.ChequeLineService;
-import com.ra.model.service.ChequeService;
-import com.ra.model.service.ProductService;
-import com.ra.model.service.UserService;
+import com.ra.model.service.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,24 +14,13 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.servlet.http.Part;
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.List;
+
 
 @Controller
 @RequestMapping("/merchandiser")
-@SessionAttributes({"products"})
+@SessionAttributes("data")
 public class MerchandiserController {
     @Autowired
     private ProductService productService;
@@ -46,30 +33,32 @@ public class MerchandiserController {
 
     private final Logger logger = LoggerFactory.getLogger(MerchandiserController.class);
 
-
-    //@ModelAttribute("products")
-    //public ArrayList<Product> createProducts() {
-    //    return new ArrayList<>();
-    //}
+    @ModelAttribute("data")
+    public MerchandiserModel init() {
+        return new MerchandiserModel();
+    }
 
     @GetMapping("/showProducts")
     public String showProducts(@RequestParam(required = false) String page,
-                               Model model, HttpSession session) throws InvalidParameterException, DBException {
+                               @ModelAttribute("data") MerchandiserModel data,
+                               Model model) throws InvalidParameterException, DBException {
 
-        ArrayList<Product> products = (ArrayList<Product>)session.getAttribute("products");
-        if (products == null) {
-            products = new ArrayList<>();
-            productService.findProducts(null, null, products);
-            session.setAttribute("products", products);
+        if (data.isProductsChanged()) {
+            productService.findProducts(data.getName(), data.getCode(), data.getProducts());
+            data.setProductsChanged(false);
         }
 
         ArrayList<Product> pageProducts = new ArrayList<>();
         ArrayList<Integer> pages = new ArrayList<>();
 
-        productService.findProducts(page, products, pageProducts, pages);
+        productService.findProducts(page, data.getProducts(), pageProducts, pages);
 
         model.addAttribute("pageProducts", pageProducts);
         model.addAttribute("pages", pages);
+        model.addAttribute("name", data.getName());
+        model.addAttribute("code", data.getCode());
+        model.addAttribute("lang", data.getLang());
+        model.addAttribute("text", TextService.getInstance());
 
         return "merchandiser/products";
     }
@@ -77,19 +66,22 @@ public class MerchandiserController {
     @PostMapping("/setProducts")
     public String setProducts(@RequestParam(required = false) String name,
                               @RequestParam(required = false) String code,
-                              @ModelAttribute("products") ArrayList<Product> products,
-                              HttpSession session) throws InvalidParameterException, DBException {
+                              @ModelAttribute("data") MerchandiserModel data) throws InvalidParameterException, DBException {
 
-        productService.findProducts(name, code, products);
-
-        session.setAttribute("name", name);
-        session.setAttribute("code", code);
+        productService.findProducts(name, code, data.getProducts());
+        data.setCode(code);
+        data.setName(name);
 
         return "redirect:/merchandiser/showProducts";
     }
 
     @GetMapping("/showProduct")
-    public String showProduct() {
+    public String showProduct(@ModelAttribute("data") MerchandiserModel data,
+                              Model model) {
+
+        model.addAttribute("lang", data.getLang());
+        model.addAttribute("text", TextService.getInstance());
+
         return "merchandiser/product";
     }
 
@@ -99,10 +91,20 @@ public class MerchandiserController {
                                 @RequestParam(required = false) String amount,
                                 @RequestParam(required = false) String price,
                                 @RequestParam("image") MultipartFile file,
-                                HttpSession session) throws InvalidParameterException, DBException, IOException {
+                                @ModelAttribute("data") MerchandiserModel data) throws InvalidParameterException, DBException {
 
         productService.createProduct(title, amount, price, countable, file);
-        session.setAttribute("products", null);
+        data.setProductsChanged(true);
+
+        return "redirect:/merchandiser/showProducts";
+    }
+
+    @PostMapping("/deleteProduct")
+    public String deleteProduct(@RequestParam(required = false) String productCode,
+                                @ModelAttribute("data") MerchandiserModel data) throws InvalidParameterException, DBException, IOException {
+
+        productService.setProductAsRemovedByCode(productCode);
+        data.setProductsChanged(true);
 
         return "redirect:/merchandiser/showProducts";
     }
@@ -110,25 +112,30 @@ public class MerchandiserController {
     @PostMapping("/deliverProduct")
     public String deliverProduct(@RequestParam(required = false) String productCode,
                                  @RequestParam(required = false) String amount,
-                                 HttpSession session) throws InvalidParameterException, DBException {
+                                 @ModelAttribute("data") MerchandiserModel data) throws InvalidParameterException, DBException {
 
         productService.deliverProduct(productCode, amount);
-        session.setAttribute("products", null);
+        data.setProductsChanged(true);
 
         return "redirect:/merchandiser/showProducts";
     }
 
     @GetMapping("/changeLanguage")
     public String changeLanguage(@RequestParam(required = false) String lang,
-                                 HttpSession session) {
+                                 @ModelAttribute("data") MerchandiserModel data) {
 
-        session.setAttribute("lang", "UK".equals(lang) ? Lang.UK : "RU".equals(lang) ? Lang.RU : Lang.EN);
+        data.setLang("UK".equals(lang) ? Lang.UK : "RU".equals(lang) ? Lang.RU : Lang.EN);
 
         return "redirect:/merchandiser/showOptions";
     }
 
     @GetMapping("/showOptions")
-    public String showOptions(){
+    public String showOptions(@ModelAttribute("data") MerchandiserModel data,
+                              Model model) {
+
+        model.addAttribute("lang", data.getLang());
+        model.addAttribute("text", TextService.getInstance());
+
         return "merchandiser/options";
     }
 }

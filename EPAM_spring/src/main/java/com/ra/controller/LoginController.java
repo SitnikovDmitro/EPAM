@@ -14,6 +14,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -31,14 +32,12 @@ public class LoginController {
     @PostMapping("/login")
     @ResponseBody
     public IntResult login(@RequestParam(required = false) String password,
-                                  @RequestParam(required = false) String username,
-                                  HttpSession session) throws DBException {
+                           @RequestParam(required = false) String username,
+                           HttpSession session) throws DBException {
 
         User user = userService.getUser(username, password);
         if (user != null && (user.getRole() == 1 || user.getRole() == 3)) {
             session.setAttribute("loggedUser", user);
-            session.setAttribute("text", new TextService());
-            session.setAttribute("lang", Lang.RU);
             return new IntResult(user.getRole());
         } else {
             return new IntResult(-1);
@@ -51,6 +50,11 @@ public class LoginController {
         return "redirect:/showLogin";
     }
 
+    @GetMapping("")
+    public String start() {
+        return "common/login";
+    }
+
     @GetMapping("/showLogin")
     public String showLogin() {
         return "common/login";
@@ -58,7 +62,13 @@ public class LoginController {
 
 
     @GetMapping("/showError")
-    public String error() {
+    public String error(@RequestParam String code,
+                        @RequestParam String description,
+                        Model model) {
+
+        model.addAttribute("code", code);
+        model.addAttribute("description", description);
+
         return "common/error";
     }
 }

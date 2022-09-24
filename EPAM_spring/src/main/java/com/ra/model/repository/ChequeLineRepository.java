@@ -8,6 +8,6 @@ import java.util.List;
 
 @Repository
 public interface ChequeLineRepository extends CrudRepository<ChequeLine, Integer> {
-    @Query(nativeQuery = true, value = "SELECT * FROM chequeLines INNER JOIN products ON chequeLines.productCode = products.code WHERE chequeLines.chequeId = ?1;")
+    @Query(nativeQuery = true, value = "SELECT * FROM chequeLines INNER JOIN products ON chequeLines.productCode = products.code WHERE chequeLines.chequeId = ?1")
     List<ChequeLine> findChequeLinesByChequeId(Integer id);
 }

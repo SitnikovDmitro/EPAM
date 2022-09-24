@@ -83,7 +83,7 @@ public class ChequeService {
     public void completeCheque(ArrayList<ChequeLine> chequeLines) throws DBException {
         if (chequeLines.isEmpty()) return;
 
-        Cheque cheque = new Cheque(0, 0, 0, Date.valueOf(LocalDate.now()));
+        Cheque cheque = new Cheque(null, 0, 0, Date.valueOf(LocalDate.now()));
         cheque.setPrice(chequeLineService.computePrice(chequeLines));
 
         try {
@@ -92,6 +92,7 @@ public class ChequeService {
                 chequeLine.setCheque(cheque);
                 chequeLineRepository.save(chequeLine);
             }
+            chequeLines.clear();
         } catch (Exception exception) {
             throw new DBException(exception);
         }

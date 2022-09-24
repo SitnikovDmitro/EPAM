@@ -31,6 +31,7 @@ public class ProductService {
      */
     public void findProducts(String name, String code, ArrayList<Product> products) throws InvalidParameterException, DBException {
         try {
+            products.clear();
             if (code == null || code.isEmpty()) {
                 products.addAll(productDAO.findProductsBySubTitle(name==null?"":name));
             } else {
