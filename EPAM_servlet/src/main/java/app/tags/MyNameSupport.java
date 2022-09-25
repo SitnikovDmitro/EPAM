@@ -4,6 +4,9 @@ import java.util.Calendar;
 import javax.servlet.jsp.JspWriter;
 import javax.servlet.jsp.tagext.TagSupport;
 
+/**
+ * Jsp tag support class
+ */
 public class MyNameSupport extends TagSupport {
     public int doStartTag() {
         JspWriter out = pageContext.getOut();

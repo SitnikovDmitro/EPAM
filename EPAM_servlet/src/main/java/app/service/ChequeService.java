@@ -2,6 +2,7 @@ package app.service;
 
 import app.dao.ChequeDAO;
 import app.dao.ChequeLineDAO;
+import app.dao.ProductDAO;
 import app.entity.Cheque;
 import app.entity.ChequeLine;
 import app.exceptions.DBException;
@@ -21,12 +22,22 @@ import java.util.ArrayList;
 public class ChequeService {
     private final ChequeDAO chequeDAO;
     private final ChequeLineDAO chequeLineDAO;
+    private final ProductDAO productDAO;
 
-    public ChequeService(ChequeDAO chequeDAO, ChequeLineDAO chequeLineDAO) {
+    public ChequeService(ChequeDAO chequeDAO, ChequeLineDAO chequeLineDAO, ProductDAO productDAO) {
         this.chequeDAO = chequeDAO;
         this.chequeLineDAO = chequeLineDAO;
+        this.productDAO = productDAO;
     }
 
+    /**
+     * Extract cheques from database
+     * @param fromPrice from price
+     * @param toPrice to price
+     * @param sortCriteria sort criteria (by price or by creation time)
+     * @param cheques cheques
+     * @param chequeLines cheque lines
+     */
     public void findCheques(String fromPrice, String toPrice, String sortCriteria, ArrayList<Cheque> cheques, ArrayList<ArrayList<ChequeLine>> chequeLines) throws SQLException {
         ArrayList<Cheque> list1;
         int from = 0, to = Integer.MAX_VALUE;
@@ -53,6 +64,15 @@ public class ChequeService {
         }
     }
 
+    /**
+     * Paginate cheques
+     * @param page number of current page
+     * @param source1 cheques extracted from database
+     * @param source2 cheque lines extracted from database
+     * @param dest1 cheques to be shown on page
+     * @param dest2 cheque lines to be shown on page
+     * @param pages references to other pages
+     */
     public void findCheques(String page, ArrayList<Cheque> source1, ArrayList<ArrayList<ChequeLine>> source2,  ArrayList<Cheque> dest1, ArrayList<ArrayList<ChequeLine>> dest2, ArrayList<Integer> pages) {
         dest1.clear();
         dest2.clear();
@@ -98,7 +118,10 @@ public class ChequeService {
             int id = chequeDAO.addCheque(cheque);
             cheque.setId(id);
             for (ChequeLine chequeLine : chequeLines) {
+                chequeLine.getProduct().setTotalAmount(chequeLine.getProduct().getTotalAmount() - chequeLine.getAmount());
+                if (chequeLine.getProduct().getTotalAmount() < 0) chequeLine.getProduct().setTotalAmount(0);
                 chequeLine.setCheque(cheque);
+                productDAO.updateProduct(chequeLine.getProduct());
                 chequeLineDAO.addChequeLine(chequeLine);
             }
         } catch (SQLException exception) {

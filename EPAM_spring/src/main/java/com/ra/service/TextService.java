@@ -18,7 +18,7 @@ public class TextService {
     private final HashMap<String, String> ukMap = new HashMap<>();
 
 
-    public TextService() {
+    private TextService() {
         try {
             JsonNode node = new ObjectMapper().readTree(getClass().getClassLoader().getResource("lang.json"));
             node.get("en").fields().forEachRemaining((entry) -> enMap.put(entry.getKey(), entry.getValue().asText()));
@@ -42,19 +42,34 @@ public class TextService {
     }
 
 
-
+    /**
+     * Returns string representation of price
+     * @param price price in cents
+     * @return representation
+     */
     public String formatPrice(int price) {
         String txt = Integer.toString(price);
         while (txt.length() < 3) txt = "0" + txt;
         return txt.substring(0, txt.length()-2)+"."+txt.substring(txt.length()-2);
     }
 
+    /**
+     * Returns string representation of weight
+     * @param weight price in grams
+     * @return representation
+     */
     public String formatWeight(int weight) {
         String txt = Integer.toString(weight);
         while (txt.length() < 4) txt = "0" + txt;
         return txt.substring(0, txt.length()-3)+"."+txt.substring(txt.length()-3);
     }
 
+    /**
+     * Returns string representation of cheque line
+     * @param chequeLine given line of cheque
+     * @param lang language
+     * @return representation
+     */
     public String formatChequeLine(ChequeLine chequeLine, Lang lang) {
         if (chequeLine == null) return "NULL";
         String result = chequeLine.getProduct().getTitle()+" ("+chequeLine.getProduct().getCode()+") - ";

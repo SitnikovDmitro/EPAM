@@ -1,4 +1,4 @@
-<%@ page import="com.ra.model.entity.Product, com.ra.model.service.TextService, com.ra.model.enums.Lang" %>
+<%@ page import="com.ra.model.entity.Product, com.ra.service.TextService, com.ra.enums.Lang" %>
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 
@@ -138,11 +138,15 @@
         if (countable) {
           modalLabel.textContent = "${text.translate('Specify product count', lang)}";
           amountInputLabel.textContent = "${text.translate('Count', lang)}";
+          amountInput.value = "";
           amountInput.step = "1";
+          amountInput.min = "1";
         } else {
           modalLabel.textContent = "${text.translate('Specify product weight', lang)}";
           amountInputLabel.textContent = "${text.translate('Weight', lang)}";
+          amountInput.value = "";
           amountInput.step = "0.001";
+          amountInput.min = "0.001";
         }
         productCodeInput.value = code;
         var myModal = new bootstrap.Modal(document.getElementById('productAmountModal'));

@@ -51,7 +51,7 @@ public class Controller extends HttpServlet {
         filePath = getServletContext().getInitParameter("file-upload");
 
         chequeLineService = new ChequeLineService(new ProductDAOImpl());
-        chequeService = new ChequeService(new ChequeDAOImpl(), new ChequeLineDAOImpl());
+        chequeService = new ChequeService(new ChequeDAOImpl(), new ChequeLineDAOImpl(), new ProductDAOImpl());
         jsonService = new JsonService();
         productService = new ProductService(new ProductDAOImpl());
         userService = new UserService(new UserDAOImpl());
@@ -72,7 +72,6 @@ public class Controller extends HttpServlet {
             exception.printStackTrace();
             logger.log(Level.ERROR, exception);
             resp.sendRedirect("controller?action=error&code=500&Server error");
-            //logout(req, resp, SiteText.getInstance().translate("error_message", (Lang)req.getSession().getAttribute("lg")));
         }
     }
 
@@ -87,7 +86,6 @@ public class Controller extends HttpServlet {
             exception.printStackTrace();
             logger.log(Level.ERROR, exception);
             resp.sendRedirect("controller?action=error&code=500&Server error");
-            //logout(req, resp, SiteText.getInstance().translate("error_message", (Lang)req.getSession().getAttribute("lg")));
         }
     }
 
@@ -122,7 +120,7 @@ public class Controller extends HttpServlet {
             method.invoke(this, req, resp);
         } catch (NoSuchMethodException exception) {
             logger.error("No method for "+action);
-            resp.sendRedirect("controller?action=error&code=404&Invalid command");
+            resp.sendRedirect("controller?action=error&code=404&description=Invalid command");
         }
     }
 
@@ -162,6 +160,7 @@ public class Controller extends HttpServlet {
         req.getSession().setAttribute("activeChequeLines", null);
         req.getSession().setAttribute("cheques", null);
         req.getSession().setAttribute("chequeLines", null);
+        req.getSession().setAttribute("products", null);
         resp.sendRedirect("controller?action=showCashierCheque");
     }
 
@@ -230,6 +229,11 @@ public class Controller extends HttpServlet {
     @HttpRequestMapping
     public void addCashierProductToCheque(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException, InvalidParameterException, DBException {
         ArrayList<ChequeLine> chequeLines = (ArrayList<ChequeLine>)req.getSession().getAttribute("activeChequeLines");
+        if (chequeLines == null) {
+            chequeLines = new ArrayList<>();
+            req.getSession().setAttribute("activeChequeLines", chequeLines);
+        }
+
         String productCode = req.getParameter("productCode");
         String amount = req.getParameter("amount");
 
@@ -429,13 +433,13 @@ public class Controller extends HttpServlet {
     @MerchandiserRequired
     @HttpRequestMapping
     public void showMerchandiserOptions(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException, EmptyParameterException, InvalidParameterException, DBException {
-        resp.sendRedirect("merchandiser/options.jsp");
+        req.getRequestDispatcher("merchandiser/options.jsp").forward(req, resp);
     }
 
     @CashierRequired
     @HttpRequestMapping
     public void showCashierOptions(HttpServletRequest req, HttpServletResponse resp) throws SQLException, IOException, ServletException, EmptyParameterException, InvalidParameterException, DBException {
-        resp.sendRedirect("cashier/options.jsp");
+        req.getRequestDispatcher("cashier/options.jsp").forward(req, resp);
     }
 
     @HttpRequestMapping

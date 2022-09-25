@@ -18,10 +18,10 @@ public class MyErrorController implements ErrorController {
         if (status != null) {
             Integer statusCode = Integer.valueOf(status.toString());
             if(statusCode == HttpStatus.NOT_FOUND.value())
-                return "/showError?code=400&description=Request not found";
+                return "redirect:/showError?code=400&description=Request not found";
             if(statusCode == HttpStatus.INTERNAL_SERVER_ERROR.value())
-                return "/showError?code=500&description=Server error";
+                return "redirect:/showError?code=500&description=Server error";
         }
-        return "/showError?code=500&description=Error";
+        return "redirect:/showError?code=500&description=Error";
     }
 }

@@ -56,18 +56,7 @@ public class ChequeLineDAOImpl implements ChequeLineDAO {
         }
     }
 
-    @Override
-    public void deleteChequeLine(int chequeId, int productCode) throws SQLException {
-        try(Connection con = ConnectionPool.getInstance().getConnection();
-            PreparedStatement stmt = con.prepareStatement("DELETE FROM chequeLines WHERE chequeId = ? AND productCode = ?;")) {
-            stmt.setInt(1, chequeId);
-            stmt.setInt(2, productCode);
-            stmt.executeUpdate();
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-            throw ex;
-        }
-    }
+
 
     private Cheque findChequeById(int id) throws SQLException {
         try(Connection con = ConnectionPool.getInstance().getConnection();

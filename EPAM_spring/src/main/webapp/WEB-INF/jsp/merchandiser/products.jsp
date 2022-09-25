@@ -1,4 +1,4 @@
-<%@ page import="com.ra.model.entity.Product, com.ra.model.service.TextService, com.ra.model.enums.Lang" %>
+<%@ page import="com.ra.model.entity.Product, com.ra.service.TextService, com.ra.enums.Lang" %>
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 
@@ -51,7 +51,7 @@
         <a class="nav-link" href="${pageContext.request.contextPath}/merchandiser/showOptions">${text.translate('Options', lang)}</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" href="${pageContext.request.contextPath}/merchandiser/logout">${text.translate('Log out', lang)}</a>
+        <a class="nav-link" href="${pageContext.request.contextPath}/logout">${text.translate('Log out', lang)}</a>
       </li>
     </ul>
 
@@ -124,11 +124,13 @@
       function openModal(code, countable) {
         if (countable) {
           modalLabel.textContent = "${text.translate('Specify count of delivery', lang)}";
-          amountInputLabel.textContent = "${text.translate('', lang)}Count";
+          amountInputLabel.textContent = "${text.translate('Count', lang)}";
+          amountInput.value = "";
           amountInput.step = "1";
         } else {
           modalLabel.textContent = "${text.translate('Specify weight of delivery', lang)}";
           amountInputLabel.textContent = "${text.translate('Weight', lang)}";
+          amountInput.value = "";
           amountInput.step = "0.001";
         }
         productCodeInput.value = code;

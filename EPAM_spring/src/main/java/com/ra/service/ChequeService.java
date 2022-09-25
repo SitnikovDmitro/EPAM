@@ -5,6 +5,7 @@ import com.ra.model.entity.ChequeLine;
 import com.ra.exceptions.DBException;
 import com.ra.repository.ChequeLineRepository;
 import com.ra.repository.ChequeRepository;
+import com.ra.repository.ProductRepository;
 import org.apache.poi.xwpf.usermodel.ParagraphAlignment;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
@@ -28,8 +29,18 @@ public class ChequeService {
     @Autowired
     private ChequeLineRepository chequeLineRepository;
     @Autowired
+    private ProductRepository productRepository;
+    @Autowired
     private ChequeLineService chequeLineService;
 
+    /**
+     * Extract cheques from database
+     * @param fromPrice from price
+     * @param toPrice to price
+     * @param sortCriteria sort criteria (by price or by creation time)
+     * @param cheques cheques
+     * @param chequeLines cheque lines
+     */
     public void findCheques(String fromPrice, String toPrice, String sortCriteria, ArrayList<Cheque> cheques, ArrayList<ArrayList<ChequeLine>> chequeLines) throws SQLException {
         List<Cheque> list1;
         int from = 0, to = Integer.MAX_VALUE;
@@ -56,6 +67,15 @@ public class ChequeService {
         }
     }
 
+    /**
+     * Paginate cheques
+     * @param page number of current page
+     * @param source1 cheques extracted from database
+     * @param source1 cheque lines extracted from database
+     * @param dest1 cheques to be shown on page
+     * @param dest2 cheque lines to be shown on page
+     * @param pages references to other pages
+     */
     public void findCheques(String page, ArrayList<Cheque> source1, ArrayList<ArrayList<ChequeLine>> source2,  ArrayList<Cheque> dest1, ArrayList<ArrayList<ChequeLine>> dest2, ArrayList<Integer> pages) {
         dest1.clear();
         dest2.clear();
@@ -87,6 +107,10 @@ public class ChequeService {
         if (pagesCount > 0 && p != pagesCount) pages.add(pagesCount);
     }
 
+    /**
+     * Creates cheque in database
+     * @param chequeLines list of cheque lines
+     */
     public void completeCheque(ArrayList<ChequeLine> chequeLines) throws DBException {
         if (chequeLines.isEmpty()) return;
 
@@ -96,7 +120,10 @@ public class ChequeService {
         try {
             chequeRepository.save(cheque);
             for (ChequeLine chequeLine : chequeLines) {
+                chequeLine.getProduct().setTotalAmount(chequeLine.getProduct().getTotalAmount() - chequeLine.getAmount());
+                if (chequeLine.getProduct().getTotalAmount() < 0) chequeLine.getProduct().setTotalAmount(0);
                 chequeLine.setCheque(cheque);
+                productRepository.save(chequeLine.getProduct());
                 chequeLineRepository.save(chequeLine);
             }
             chequeLines.clear();

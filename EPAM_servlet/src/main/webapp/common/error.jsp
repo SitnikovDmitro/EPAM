@@ -35,7 +35,7 @@
           </ul>
 
           <div class="card-body">
-            <button type="button" href="${pageContext.request.contextPath}" class="btn btn-primary" data-bs-dismiss="modal">Login</button>
+            <a type="button" href="${pageContext.request.contextPath}" class="btn btn-primary">Login</a>
           </div>
         </div>
       </div>

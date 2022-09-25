@@ -74,10 +74,11 @@ public class CashierController {
 
 
     @GetMapping("/finishCheque")
-    public String finishCheque(@ModelAttribute("data") CashierModel data) throws InvalidParameterException, DBException {
+    public String finishCheque(@ModelAttribute("data") CashierModel data) throws DBException {
 
         chequeService.completeCheque(data.getActiveChequeLines());
         data.setChequesChanged(true);
+        data.setProductsChanged(true);
 
         return "redirect:/cashier/showCheque";
     }

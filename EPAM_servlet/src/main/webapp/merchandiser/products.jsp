@@ -127,11 +127,13 @@
       function openModal(code, countable) {
         if (countable) {
           modalLabel.textContent = "${text.translate('Specify count of delivery', lang)}";
-          amountInputLabel.textContent = "${text.translate('', lang)}Count";
+          amountInputLabel.textContent = "${text.translate('Count', lang)}";
+          amountInput.value = "";
           amountInput.step = "1";
         } else {
           modalLabel.textContent = "${text.translate('Specify weight of delivery', lang)}";
           amountInputLabel.textContent = "${text.translate('Weight', lang)}";
+          amountInput.value = "";
           amountInput.step = "0.001";
         }
         productCodeInput.value = code;

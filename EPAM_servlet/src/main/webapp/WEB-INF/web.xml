@@ -19,30 +19,18 @@
   <context-param>
     <description>Location to store uploaded files</description>
     <param-name>file-upload</param-name>
-    <param-value>
-      C:\apache-tomcat-9.0.65\webapps\EPAM_servlet\files\
-    </param-value>
+    <param-value>C:\apache-tomcat-9.0.65\webapps\EPAM_servlet\files\</param-value>
   </context-param>
 
 
   <error-page>
     <error-code>404</error-code>
-    <location>/controller?action=error&amp;code=404&amp;Request not found</location>
+    <location>/controller?action=error&amp;code=404&amp;description=Request not found</location>
   </error-page>
 
   <error-page>
     <exception-type>java.lang.Throwable</exception-type>
-    <location>/controller?action=error&amp;code=500&amp;Server error</location>
+    <location>/controller?action=error&amp;code=500&amp;description=Server error</location>
   </error-page>
-
-  <!--   <filter>
-    <filter-name>filter</filter-name>
-    <filter-class>com.servlets.ControllerFilter</filter-class>
-  </filter>
-
-  <filter-mapping>
-    <filter-name>filter</filter-name>
-    <url-pattern>/*</url-pattern>
-  </filter-mapping>   -->
 
 </web-app>
